@@ -1,11 +1,13 @@
-const cloudinary = require("../middleware/cloudinary");
+const cloudinary = require("../../The Move (MVC)/middleware/cloudinary");
 const Post = require("../models/Post");
+const Comments = require("../models/Comments")
 
 module.exports = {
   getProfile: async (req, res) => {
     try {
       const posts = await Post.find({ user: req.user.id });
-      res.render("profile.ejs", { posts: posts, user: req.user });
+      res.render("profile.ejs", { posts: posts, user: req.user, });
+      console.log()
     } catch (err) {
       console.log(err);
     }
@@ -21,7 +23,8 @@ module.exports = {
   getPost: async (req, res) => {
     try {
       const post = await Post.findById(req.params.id);
-      res.render("post.ejs", { post: post, user: req.user });
+      const comment = await Comments.find({postID: req.params.id}).sort({ createdAt: "desc" }).lean();
+      res.render("post.ejs", { post: post, user: req.user, comments: comment});
     } catch (err) {
       console.log(err);
     }
@@ -71,6 +74,32 @@ module.exports = {
       res.redirect("/profile");
     } catch (err) {
       res.redirect("/profile");
+    }
+  },
+  commentPost: async (req, res) => {
+    try {
+ 
+      await Comments.create({
+        comment: req.body.comment,
+        madeBy: req.user.id,
+        postID: req.params.id
+      });
+      console.log("comment has been added!");
+      res.redirect(`/post/${req.params.id}`);
+    } catch (err) {
+      console.log(err);
+    }
+  },
+   deleteComment: async (req, res) => {
+    try {
+  
+      // Delete post from db
+      await Comments.remove({ _id: req.params.id});
+      console.log(req.comments.comment)
+      console.log("Deleted Post");
+      res.redirect(`/post/${req.params.id}`);
+    } catch (err) {
+      res.redirect(`/post/${req.params.id}`);
     }
   },
 };
